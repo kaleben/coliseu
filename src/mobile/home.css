@@ -1,0 +1,248 @@
+/* =========================================================================
+   App no celular — home (aba Terminais). Mockup: docs/mockups/mobile-app.html
+   (#v-terms). Tudo sob #app-home .app-terms para não vazar para outras telas.
+   ========================================================================= */
+/* Zera o botão do desktop (styles.css) com especificidade baixa: as classes
+   abaixo e o .app-round da casca continuam valendo, e o button:hover do
+   desktop não pinta as linhas depois do toque. */
+:where(#app-home .app-terms) button:not(.app-round),
+:where(#app-home .app-terms) button:not(.app-round):hover {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  transition: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#app-home .app-terms button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+#app-home .app-terms svg { display: block; flex: none; }
+
+/* ---------- Cartão "Agora" (monocromático) ---------- */
+#app-home .app-terms .hero {
+  margin: 0 16px;
+  border-radius: 24px;
+  padding: 18px 18px 14px;
+  background: linear-gradient(180deg, #19191c 0%, var(--app-grouped) 100%);
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .09);
+  color: var(--app-label);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+#app-home .app-terms .eyebrow { font-size: 13px; font-weight: 500; color: var(--app-label-3); }
+#app-home .app-terms .big {
+  margin-top: 2px;
+  font: 700 32px/1.05 var(--app-font-display);
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
+}
+#app-home .app-terms .big small { font-size: 17px; font-weight: 500; color: var(--app-label-3); letter-spacing: -.01em; }
+#app-home .app-terms .stats { display: grid; grid-template-columns: repeat(3, 1fr); font-size: 13px; }
+#app-home .app-terms .stats span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#app-home .app-terms .stats span + span { padding-left: 14px; border-left: .5px solid var(--app-sep); }
+#app-home .app-terms .stats b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 20px/1.1 var(--app-font-display);
+  font-variant-numeric: tabular-nums;
+}
+#app-home .app-terms .stats b i { width: 6px; height: 6px; border-radius: 50%; }
+#app-home .app-terms .stats em { font-style: normal; color: var(--app-label-3); }
+#app-home .app-terms .hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 0 0;
+  border-top: .5px solid var(--app-sep);
+  text-align: left;
+}
+#app-home .app-terms .hero-cta .ci {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--app-fill-2);
+  color: var(--app-label-2);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+#app-home .app-terms .hero-cta .ct { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#app-home .app-terms .hero-cta .ct b { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#app-home .app-terms .hero-cta .ct span { font-size: 13px; color: var(--app-label-3); }
+#app-home .app-terms .hero-cta .go {
+  height: 32px;
+  padding: 0 15px;
+  border-radius: 16px;
+  background: var(--app-label);
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+#app-home .app-terms .hero-cta:active .go { opacity: .8; }
+
+/* ---------- Listas agrupadas ---------- */
+#app-home .app-terms .group { margin: 26px 16px 0; }
+#app-home .app-terms .group-h { display: flex; align-items: baseline; gap: 8px; padding: 0 4px 8px; }
+#app-home .app-terms .group-h b { font: 600 20px/1.2 var(--app-font-display); letter-spacing: -.02em; }
+#app-home .app-terms .group-h span { font-size: 15px; color: var(--app-label-3); }
+#app-home .app-terms .group-h .gd { width: 8px; height: 8px; border-radius: 50%; align-self: center; flex: none; }
+#app-home .app-terms .inset { background: var(--app-grouped); border-radius: 18px; overflow: hidden; }
+#app-home .app-terms .row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 66px;
+  padding: 10px 14px;
+  text-align: left;
+  /* Toque longo é nosso: sem menu nativo, sem seleção de texto. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+}
+#app-home .app-terms .row:active { background: var(--app-grouped-2); }
+#app-home .app-terms .row + .row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 62px;
+  right: 0;
+  height: .5px;
+  background: var(--app-sep);
+}
+#app-home .app-terms .tile {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--app-fill-2);
+  color: var(--app-label-2);
+}
+#app-home .app-terms .tile.claude { background: rgba(217, 119, 87, .16); color: var(--app-claude); }
+#app-home .app-terms .tile.codex { font: 600 12px var(--app-mono); }
+#app-home .app-terms .row .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#app-home .app-terms .row .t { font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#app-home .app-terms .row .s {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--app-label-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#app-home .app-terms .row .s.busy { color: var(--app-yellow); }
+#app-home .app-terms .row .s.waiting { color: var(--app-orange); }
+#app-home .app-terms .row .s.done { color: var(--app-green); }
+#app-home .app-terms .spin {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.6px solid currentColor;
+  border-right-color: transparent;
+  animation: app-home-spin .9s linear infinite;
+  flex: none;
+}
+@keyframes app-home-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  #app-home .app-terms .spin { animation: none; }
+}
+#app-home .app-terms .trail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  color: var(--app-label-3);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+#app-home .app-terms .count-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba(255, 159, 10, .2);
+  color: var(--app-orange);
+  font-size: 12px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+
+/* ---------- Sem terminais ---------- */
+#app-home .app-terms .empty {
+  margin: 40px 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+#app-home .app-terms .empty-ic {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 8px;
+  border-radius: 18px;
+  background: var(--app-grouped);
+  color: var(--app-label-2);
+  display: grid;
+  place-items: center;
+}
+#app-home .app-terms .empty b { font: 600 20px/1.2 var(--app-font-display); letter-spacing: -.02em; }
+#app-home .app-terms .empty p { margin: 0 0 12px; font-size: 15px; color: var(--app-label-3); }
+#app-home .app-terms .empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 24px;
+  background: var(--app-accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+#app-home .app-terms .empty-btn:active { opacity: .85; }
+
+/* Convite para ativar as notificações (Web Push) */
+#app-home .app-terms .push-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 16px 0;
+  padding: 12px 12px 12px 14px;
+  border-radius: 18px;
+  background: var(--app-grouped);
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .06);
+}
+#app-home .app-terms .pc-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--app-fill-2); color: var(--app-label-2); flex: none; }
+#app-home .app-terms .pc-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#app-home .app-terms .pc-txt b { font-size: 15px; font-weight: 600; color: var(--app-label); }
+#app-home .app-terms .pc-txt span { font-size: 13px; color: var(--app-label-3); line-height: 1.35; }
+#app-home .app-terms .pc-acts { display: flex; align-items: center; gap: 4px; flex: none; }
+#app-home .app-terms .pc-on { height: 32px; padding: 0 14px; border-radius: 16px; background: var(--app-label); color: #000; font: 600 14px var(--app-font); }
+#app-home .app-terms .pc-x { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--app-label-3); }
+
+/* Contexto em uso, no fim da linha de estado */
+#app-home .app-terms .row .s { display: flex; align-items: center; gap: 6px; min-width: 0; }
+#app-home .app-terms .row .s-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+#app-home .app-terms .row .ctxu { flex: none; font: 500 13px var(--app-font); color: var(--app-label-3); background: none; padding: 0; border-radius: 0; line-height: inherit; font-variant-numeric: tabular-nums; }
+#app-home .app-terms .row .ctxu::before { content: "·"; margin-right: 6px; color: var(--app-label-3); }
+#app-home .app-terms .row .ctxu.ctxu-warn { color: var(--app-yellow); background: none; }
+#app-home .app-terms .row .ctxu.ctxu-hi { color: var(--app-orange); background: none; }

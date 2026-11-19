@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Coliseu</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- iPhone: instalado na tela inicial abre em tela cheia, barra de status sobre o fundo preto -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Coliseu" />
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+    <meta name="theme-color" content="#000000" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+  <body>
+    <aside id="sidebar">
+      <header class="brand">
+        <span class="logo" aria-hidden="true"><i></i></span>
+        <span class="brand-name">Coliseu</span>
+        <button id="open-settings" class="icon" title="Configurações"></button>
+      </header>
+      <nav class="side-nav">
+        <button id="nav-prs" class="nav-item" title="Pull requests (Ctrl+Shift+P)"></button>
+      </nav>
+      <div class="side-label"><span>Grupos</span><button id="add-group" class="icon" title="Novo grupo"></button></div>
+      <nav id="groups"></nav>
+      <footer id="account-bar" title="Contas e uso chegam na fase 3">conta: —</footer>
+    </aside>
+    <section id="main">
+      <div id="tabbar"></div>
+      <div id="workspace"></div>
+      <div id="prs-view" hidden></div>
+    </section>
+    <div id="modal-root"></div>
+  </body>
+</html>

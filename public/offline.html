@@ -1,0 +1,104 @@
+<!doctype html>
+<!-- Coliseu — tela "sem conexão com o PC". Guardada no celular pelo service worker
+     (sw.js): aparece quando o app abre e o PC não responde, e também dentro do app
+     quando a conexão cai por mais tempo. Tenta de novo sozinha. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Coliseu — sem conexão</title>
+<style>
+  :root {
+    --bg: #000; --card: #1c1c1e; --sep: rgba(84, 84, 88, .55);
+    --label: #f5f5f7; --label-2: rgba(235, 235, 245, .62); --label-3: rgba(235, 235, 245, .36);
+    --red: #ff453a; --green: #30d158;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--label); font: 15px/1.4 var(--font); -webkit-font-smoothing: antialiased; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+  main { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .icon { position: relative; width: 76px; height: 76px; border-radius: 20px; background: var(--card);
+    display: grid; place-items: center; color: var(--label-2); margin-bottom: 22px; }
+  .icon .dot { position: absolute; right: -4px; top: -4px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--red); border: 3px solid var(--bg); }
+  h1 { margin: 0 0 8px; font-size: 24px; line-height: 1.2; font-weight: 700; letter-spacing: -.02em; }
+  p.lead { margin: 0 0 26px; color: var(--label-2); font-size: 15px; }
+  .list { width: 100%; background: var(--card); border-radius: 12px; text-align: left; margin-bottom: 8px; overflow: hidden; }
+  .row { display: flex; gap: 12px; align-items: center; padding: 12px 14px; min-height: 48px; }
+  .row + .row { border-top: .5px solid var(--sep); }
+  .n { flex: none; width: 20px; height: 20px; border-radius: 50%; background: rgba(120, 120, 128, .24);
+    color: var(--label-2); font-size: 12px; font-weight: 600; display: grid; place-items: center; }
+  .row span { font-size: 15px; }
+  .hint { width: 100%; text-align: left; color: var(--label-3); font-size: 13px; margin: 6px 14px 28px; padding: 0 14px; }
+  button { width: 100%; height: 50px; border: 0; border-radius: 14px; background: var(--label); color: #000;
+    font: 600 17px var(--font); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button:active { opacity: .7; }
+  button:disabled { opacity: .5; }
+  .status { margin-top: 16px; min-height: 20px; color: var(--label-3); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--label-3); border-top-color: transparent; animation: s 1s linear infinite; }
+  @keyframes s { to { transform: rotate(1turn); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="icon" aria-hidden="true">
+    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 17H4a2 2 0 0 1-2-2V5c0-1.5 1-2 1-2"/><path d="M22 15V5a2 2 0 0 0-2-2H9"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="m2 2 20 20"/>
+    </svg>
+    <i class="dot"></i>
+  </div>
+  <h1>Sem conexão com o PC</h1>
+  <p class="lead">O Coliseu roda no seu computador, e este celular não está conseguindo falar com ele.</p>
+  <div class="list">
+    <div class="row"><b class="n">1</b><span>O PC está ligado e com o Coliseu aberto</span></div>
+    <div class="row"><b class="n">2</b><span>O Tailscale está ligado neste celular</span></div>
+    <div class="row"><b class="n">3</b><span>O acesso pelo celular está ativo nas configurações do Coliseu</span></div>
+  </div>
+  <div class="hint">Assim que o PC responder, o app abre sozinho.</div>
+  <button id="retry">Tentar agora</button>
+  <div class="status" id="status" role="status"></div>
+</main>
+<script>
+  // Dentro do app (queda longa) esta página vem num iframe: quem recarrega é o app.
+  var target = window.top || window;
+  var btn = document.getElementById("retry");
+  var statusEl = document.getElementById("status");
+  var timer = 0, tries = 0, busy = false;
+
+  function show(text, spinning) {
+    statusEl.innerHTML = (spinning ? '<span class="spin"></span>' : "") + text;
+  }
+
+  // O PC respondeu qualquer coisa (até "acesso negado"): recarrega o app de verdade.
+  function check(manual) {
+    if (busy) return;
+    busy = true;
+    clearTimeout(timer);
+    if (manual) btn.disabled = true;
+    show("Procurando o PC…", true);
+    var ctl = "AbortController" in window ? new AbortController() : null;
+    var t = setTimeout(function () { ctl && ctl.abort(); }, 6000);
+    fetch("/manifest.webmanifest?ping=" + Date.now(), { cache: "no-store", signal: ctl && ctl.signal })
+      .then(function () { show("Conectado. Abrindo…", true); target.location.reload(); })
+      .catch(function () {
+        tries++;
+        // Tenta de novo cada vez mais espaçado (3 s → 15 s), sem gastar bateria à toa.
+        var wait = Math.min(15, 3 + tries * 2);
+        show("Sem resposta. Tentando de novo em " + wait + " s");
+        timer = setTimeout(function () { check(false); }, wait * 1000);
+      })
+      .then(function () { clearTimeout(t); busy = false; btn.disabled = false; });
+  }
+
+  btn.addEventListener("click", function () { tries = 0; check(true); });
+  // Voltou para o app (desbloqueou a tela, trocou de Wi-Fi): tenta na hora.
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) check(false); });
+  addEventListener("online", function () { check(false); });
+  check(false);
+</script>
+</body>
+</html>

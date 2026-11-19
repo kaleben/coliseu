@@ -1,0 +1,155 @@
+/* =========================================================================
+   App no celular — abas PRs e Contas (pages.ts). Mockup: #v-prs e #v-acc
+   em docs/mockups/mobile-app.html. Usa os tokens --app-* do shell.css.
+   ========================================================================= */
+#app-home .pg-sub {
+  margin: -6px 20px 0;
+  font-size: 15px;
+  color: var(--app-label-3);
+  font-variant-numeric: tabular-nums;
+}
+#app-home .pg-sub b { font-weight: 500; color: var(--app-orange); }
+
+/* Grupos e listas agrupadas */
+#app-home .pg-group { margin: 22px 16px 0; }
+#app-home .pg-group-h { display: flex; align-items: baseline; gap: 8px; padding: 0 4px 8px; }
+#app-home .pg-group-h b { font: 600 20px/1.2 var(--app-font-display); letter-spacing: -.02em; color: var(--app-label); }
+#app-home .pg-group-h b.warn { color: var(--app-orange); }
+#app-home .pg-group-h span { font-size: 15px; color: var(--app-label-3); font-variant-numeric: tabular-nums; }
+#app-home .pg-inset { background: var(--app-grouped); border-radius: 18px; overflow: hidden; }
+
+/* Linha de PR: o link inteiro é a linha */
+#app-home .pg-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 10px 12px 10px 14px;
+  color: var(--app-label);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#app-home .pg-row:active { background: var(--app-grouped-2); }
+#app-home .pg-row + .pg-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 62px;
+  right: 0;
+  height: .5px;
+  background: var(--app-sep);
+}
+#app-home .pg-tile {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--app-fill-2);
+  color: var(--app-label-2);
+}
+#app-home .pg-tile.warn { color: var(--app-orange); background: rgba(255, 159, 10, .14); }
+#app-home .pg-tile.ok { color: var(--app-green); background: rgba(48, 209, 88, .14); }
+#app-home .pg-tile.bad { color: var(--app-red); background: rgba(255, 69, 58, .14); }
+#app-home .pg-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+#app-home .pg-t {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+#app-home .pg-tag { display: flex; flex-wrap: wrap; column-gap: 8px; font-size: 13px; color: var(--app-label-3); }
+#app-home .pg-tag .repo { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#app-home .pg-tag .warn { color: var(--app-orange); }
+#app-home .pg-tag .ok { color: var(--app-green); }
+#app-home .pg-tag .bad { color: var(--app-red); }
+#app-home .pg-trail { display: flex; align-items: center; color: var(--app-label-3); flex: none; }
+
+/* Avisos (vazio, carregando, erro) */
+#app-home .pg-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  font-size: 15px;
+  color: var(--app-label-2);
+  overflow-wrap: anywhere;
+}
+#app-home .pg-notice svg { flex: none; }
+#app-home .pg-notice.muted { color: var(--app-label-3); }
+#app-home .pg-notice.err { color: var(--app-orange); font-size: 14px; }
+
+/* Contas: um bloco por conta com os medidores */
+#app-home .pg-first { margin-top: 4px; }
+#app-home .pg-usage {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* o "button" do desktop centraliza o conteúdo */
+  gap: 9px;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: var(--app-label);
+  -webkit-tap-highlight-color: transparent;
+}
+#app-home button.pg-usage:active { background: var(--app-grouped-2); }
+#app-home .pg-usage + .pg-usage { border-top: .5px solid var(--app-sep); }
+#app-home .pg-usage .h { display: flex; align-items: center; gap: 8px; min-height: 22px; font-size: 16px; font-weight: 600; }
+#app-home .pg-usage .n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#app-home .pg-usage .plan {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--app-fill-2);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--app-label-2);
+  text-transform: capitalize;
+}
+#app-home .pg-usage .chk { margin-left: auto; display: flex; color: var(--app-accent); }
+#app-home .pg-meter {
+  display: grid;
+  grid-template-columns: 30px 1fr 40px 92px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--app-label-3);
+  font-variant-numeric: tabular-nums;
+}
+#app-home .pg-meter .tr { height: 6px; border-radius: 3px; background: var(--app-fill); overflow: hidden; }
+#app-home .pg-meter .fl { display: block; height: 100%; border-radius: 3px; background: var(--app-accent); }
+#app-home .pg-meter .fl.hi { background: var(--app-orange); }
+#app-home .pg-meter em { font-style: normal; text-align: right; color: var(--app-label-2); }
+#app-home .pg-meter small { font-size: 12px; text-align: right; white-space: nowrap; color: var(--app-label-3); }
+#app-home .pg-note { font-size: 13px; color: var(--app-label-3); }
+#app-home .pg-note.warn { color: var(--app-orange); }
+
+/* Botão de atualizar girando */
+#app-home .pg-spinning svg { animation: pg-spin 1s linear infinite; }
+@keyframes pg-spin { to { transform: rotate(360deg); } }
+#app-home .pg-notice .spin { animation: pg-spin 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  #app-home .pg-spinning svg, #app-home .pg-notice .spin { animation-duration: 3s; }
+}
+
+/* Contas → Notificações neste celular */
+#app-home .pg-push-st { margin-left: auto; font-size: 14px; font-weight: 500; color: var(--app-label-3); }
+#app-home .pg-push-st.on { color: var(--app-green); }
+#app-home .pg-push-st.denied { color: var(--app-orange); }
+
+/* Contas do Claude: um cartão por conta; a ativa tem um contorno verde fino */
+#app-home .pg-accs { display: flex; flex-direction: column; gap: 10px; background: none; overflow: visible; }
+#app-home .pg-accs .pg-usage { background: var(--app-grouped); border-radius: 18px; }
+#app-home .pg-accs .pg-usage + .pg-usage { border-top: 0; }
+#app-home .pg-accs button.pg-usage:active { background: var(--app-grouped-2); }
+#app-home .pg-usage.active { box-shadow: inset 0 0 0 1px var(--app-green); }
+#app-home .pg-usage.active .chk { color: var(--app-green); }

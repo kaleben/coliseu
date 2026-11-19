@@ -1,0 +1,221 @@
+/* =========================================================================
+   App no celular — casca (docs/MOBILE_SPEC.md, mockup docs/mockups/mobile-app.html)
+   Só vale com body.app (celular). Tokens do idioma iOS escuro; as telas
+   (home.css, convo.css, pages.css) usam estes tokens.
+   ========================================================================= */
+body.app {
+  --app-bg: #000;
+  --app-grouped: #121214;
+  --app-grouped-2: #1c1c1f;
+  --app-fill: rgba(120, 120, 128, .2);
+  --app-fill-2: rgba(120, 120, 128, .12);
+  --app-sep: rgba(84, 84, 88, .55);
+  --app-label: #f5f5f7;
+  --app-label-2: rgba(235, 235, 245, .62);
+  --app-label-3: rgba(235, 235, 245, .36);
+  --app-accent: #8b6cff;
+  --app-orange: #ff9f0a;
+  --app-yellow: #ffd60a;
+  --app-green: #30d158;
+  --app-red: #ff453a;
+  --app-claude: #d97757;
+  --app-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter Variable", "Inter", system-ui, sans-serif;
+  --app-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Variable", "Inter", system-ui, sans-serif;
+  --app-mono: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  --app-ease: cubic-bezier(.32, .72, 0, 1);
+  background: var(--app-bg);
+  font-family: var(--app-font);
+  letter-spacing: -.011em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* O desktop some: sem sidebar, gaveta, abas nem botão de menu. */
+body.app #sidebar,
+body.app .scrim,
+body.app #tabbar,
+body.app .drawer-btn,
+body.app #prs-view { display: none !important; }
+
+/* ---------- Telas: home por cima, conversa (#main) entra pela direita ---------- */
+#app-home {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, .05), transparent 60%), var(--app-bg);
+  color: var(--app-label);
+  transition: transform .32s var(--app-ease);
+}
+body.app #main {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  background: var(--app-bg);
+  transform: translateX(100%);
+  transition: transform .32s var(--app-ease);
+  box-shadow: -20px 0 40px rgba(0, 0, 0, .5);
+}
+body.app.app-convo #main { transform: none; }
+body.app.app-convo #app-home { transform: translateX(-28%); pointer-events: none; }
+body.app:not(.app-convo) #main { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  #app-home, body.app #main { transition: none; }
+}
+
+.app-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+}
+.app-scroll::-webkit-scrollbar { display: none; }
+
+/* Cabeçalho das abas */
+.app-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: max(14px, env(safe-area-inset-top, 0px)) 16px 0;
+}
+.app-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px 0 11px;
+  border-radius: 16px;
+  background: var(--app-fill-2);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--app-label-2);
+}
+.app-conn i { width: 7px; height: 7px; border-radius: 50%; background: var(--app-green); }
+.app-conn .off { display: none; }
+/* Conexão caiu (o transporte marca body.disconnected): ponto vermelho. */
+body.disconnected .app-conn i { background: var(--app-red); }
+body.disconnected .app-conn .on { display: none; }
+body.disconnected .app-conn .off { display: inline; }
+.app-round {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--app-fill-2);
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--app-label);
+  flex: none;
+}
+.app-round:active { background: var(--app-fill); }
+.app-title {
+  margin: 14px 20px;
+  font: 700 34px/1.1 var(--app-font-display);
+  letter-spacing: -.025em;
+  color: var(--app-label);
+}
+
+/* ---------- Barra de abas flutuante ---------- */
+.app-tabbar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 32px;
+  background: rgba(30, 30, 33, .72);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45), inset 0 0 0 .5px rgba(255, 255, 255, .1);
+}
+.app-tabbar button {
+  position: relative;
+  height: 52px;
+  min-width: 64px;
+  padding: 0 14px;
+  border-radius: 26px;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--app-label-2);
+  font: 600 14px var(--app-font);
+}
+.app-tabbar button span { display: none; }
+.app-tabbar button[aria-current="page"] { background: var(--app-accent); color: #fff; padding: 0 18px; }
+.app-tabbar button[aria-current="page"] span { display: inline; }
+.app-tabbar .app-dot {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--app-red);
+  box-shadow: 0 0 0 2px rgb(30, 30, 33);
+}
+
+/* ---------- Folha de ações (iOS) ---------- */
+.app-sheet-root { position: fixed; inset: 0; z-index: 60; }
+.app-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .4); opacity: 0; transition: opacity .25s; }
+.app-sheet {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateY(120%);
+  transition: transform .32s var(--app-ease);
+}
+.app-sheet-root.on .app-scrim { opacity: 1; }
+.app-sheet-root.on .app-sheet { transform: none; }
+.app-sheet .blk {
+  background: rgba(37, 37, 40, .94);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-radius: 14px;
+  overflow: hidden;
+  max-height: 70dvh;
+  overflow-y: auto;
+}
+.app-sheet .head {
+  padding: 14px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--app-label-3);
+  border-bottom: .5px solid var(--app-sep);
+  overflow-wrap: anywhere;
+}
+.app-sheet .opt,
+.app-sheet .cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 57px;
+  border: 0;
+  background: none;
+  font: 400 19px var(--app-font);
+  color: var(--app-accent);
+}
+.app-sheet .opt + .opt { border-top: .5px solid var(--app-sep); }
+.app-sheet .opt:active { background: rgba(255, 255, 255, .06); }
+.app-sheet .opt.red { color: var(--app-red); }
+.app-sheet .opt .gd { width: 10px; height: 10px; border-radius: 50%; }
+.app-sheet .cancel { font-weight: 600; background: rgba(44, 44, 47, .96); border-radius: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  .app-scrim, .app-sheet { transition: none; }
+}
+
+/* Avisos e diálogos do app ficam por cima das telas. */
+body.app .toast { z-index: 70; }

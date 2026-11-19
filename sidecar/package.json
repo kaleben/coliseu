@@ -1,0 +1,9 @@
+{
+  "name": "coliseu-agent",
+  "private": true,
+  "type": "module",
+  "description": "Processo auxiliar do Coliseu: roda o Claude Code via Agent SDK para o modo chat.",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.327"
+  }
+}
