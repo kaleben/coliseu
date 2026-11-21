@@ -18,7 +18,7 @@ fn dir() -> PathBuf {
 
 /// `tailscale status --json` com limite de 3 s (um tailscaled travado não pode
 /// travar a abertura do app nem as configurações).
-fn status_json() -> Option<serde_json::Value> {
+pub fn status_json() -> Option<serde_json::Value> {
     use std::io::Read;
     let mut child = std::process::Command::new("tailscale")
         .args(["status", "--json"])

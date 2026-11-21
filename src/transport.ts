@@ -165,6 +165,16 @@ export interface PushDevice {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ChatEvent = { chatId: string; ev: string; [k: string]: any };
 
+/** Verificações dos primeiros passos (docs/ONBOARDING_SPEC.md). */
+export interface SetupCheck {
+  tools: string[];
+  ghUser?: string | null;
+  tsRunning: boolean;
+  tsHttps: boolean;
+  tsOperator: boolean;
+  voice: boolean;
+}
+
 export interface Transport {
   /** true no app desktop (Tauri); false no navegador (celular). */
   readonly native: boolean;
@@ -221,6 +231,9 @@ export interface Transport {
   clipboardRead(): Promise<string>;
   clipboardWrite(text: string): Promise<void>;
   openUrl(url: string): void;
+  setupCheck(): Promise<SetupCheck>;
+  setupProjects(): Promise<string[]>;
+  voiceSet(on: boolean): Promise<void>;
 }
 
 const toBytes = (d: unknown): Uint8Array =>
@@ -282,6 +295,9 @@ export const tauriTransport: Transport = {
   clipboardRead: () => readText(),
   clipboardWrite: (t) => writeText(t),
   openUrl: (u) => void openUrl(u),
+  setupCheck: () => invoke("setup_check"),
+  setupProjects: () => invoke("setup_projects"),
+  voiceSet: (on) => invoke("voice_set", { on }),
 };
 
 // ---------- Navegador (celular): WebSocket com o core ----------
@@ -478,6 +494,9 @@ function createWsTransport(): Transport {
       }
     },
     openUrl: (u) => void window.open(u, "_blank", "noopener"),
+    setupCheck: () => Promise.reject("disponível só no desktop"),
+    setupProjects: () => Promise.resolve([]),
+    voiceSet: () => Promise.reject("disponível só no desktop"),
   };
 }
 

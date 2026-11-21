@@ -55,6 +55,8 @@ export interface Settings {
   notify: NotifySettings;
   ui: UiSettings;
   prs: PrSettings;
+  /** Primeiros passos já vistos (docs/ONBOARDING_SPEC.md). */
+  onboarding: { done: boolean };
 }
 
 export const DEFAULTS: Settings = {
@@ -71,6 +73,7 @@ export const DEFAULTS: Settings = {
     mutedGroups: [],
   },
   ui: { showCodex: true, theme: "preto", termFont: "ubuntu", termFontSize: 15 },
+  onboarding: { done: false },
   prs: {
     enabled: true,
     // Vazios: a conta logada no `gh`, em todas as organizações.
@@ -99,6 +102,7 @@ export function loadSettings(raw: unknown) {
   settings = {
     notify: { ...DEFAULTS.notify, ...(r.notify ?? {}) },
     ui: { ...DEFAULTS.ui, ...(r.ui ?? {}) },
+    onboarding: { ...DEFAULTS.onboarding, ...(r.onboarding ?? {}) },
     prs: { ...DEFAULTS.prs, ...(r.prs ?? {}), events: { ...DEFAULTS.prs.events, ...(r.prs?.events ?? {}) } },
   };
 }
@@ -163,7 +167,10 @@ export function openSettings(groups: Group[], onClose: () => void, onChange: () 
           ).join("")}</select></label>
         <label><span class="label">Tamanho</span>
           <input type="number" min="9" max="28" step="1" data-key="ui:termFontSize" value="${ui.termFontSize}" /></label>
-      </div>`,
+      </div>
+      ${api.native ? `<div class="field"><div class="label">Primeiros passos</div>
+        <p class="hint" style="margin:0 0 8px">Ferramentas, conta, grupos, GitHub, celular e avisos, um passo de cada vez.</p>
+        <button class="btn" data-act="onboarding" style="align-self:flex-start">Refazer os primeiros passos</button></div>` : ""}`,
     notify: `
       <h3>Notificações</h3>
       <div class="group-box">
@@ -312,6 +319,10 @@ export function openSettings(groups: Group[], onClose: () => void, onChange: () 
     }
     const act = t.closest<HTMLElement>("[data-act]")?.dataset.act;
     if (act === "close") close();
+    if (act === "onboarding") {
+      close();
+      window.dispatchEvent(new Event("coliseu:onboarding"));
+    }
     // Teste: desktop e, se ligado, também os celulares (mesmo com a janela em foco).
     if (act === "test") api.notify("Coliseu", "Notificações funcionando ✔", undefined, n.sound, n.push);
     const dev = t.closest<HTMLElement>("[data-push]");

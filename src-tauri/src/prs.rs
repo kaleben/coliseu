@@ -96,11 +96,13 @@ fn gh_api(path: &str) -> anyhow::Result<Value> {
     gh(&["api", path])
 }
 
-/// Login da conta ativa no `gh` (None: gh ausente ou sem login). Guardado por 10 min.
+/// Login da conta ativa no `gh` (None: gh ausente ou sem login). Guardado por 10 min
+/// (a falta de login, só 10 s: quem acabou de rodar `gh auth login` vê na hora).
 pub fn gh_user() -> Option<String> {
     static CACHE: LazyLock<Mutex<Option<(u64, Option<String>)>>> = LazyLock::new(|| Mutex::new(None));
     if let Some((at, v)) = CACHE.lock().clone() {
-        if now_ms().saturating_sub(at) < 10 * 60_000 {
+        let ttl = if v.is_some() { 10 * 60_000 } else { 10_000 };
+        if now_ms().saturating_sub(at) < ttl {
             return v;
         }
     }

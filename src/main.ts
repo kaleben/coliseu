@@ -8,6 +8,7 @@ import { applyTheme, fontCss, TERM_THEMES } from "./themes";
 import "@fontsource-variable/inter";
 import "@fontsource/jetbrains-mono/400.css";
 import { loadSettings, openSettings, settings } from "./settings";
+import { openOnboarding, setupTerms, shouldOnboard } from "./onboarding";
 import { accountById, accounts, initAccounts, rerenderFooter, setUsageListener, shortName } from "./accounts";
 import { bindPrsView, initPrs, prsConfigChanged, prsEnabled, render as renderPrs, totalCount, waitingCount } from "./prs";
 import type { Terminal } from "./transport";
@@ -78,7 +79,7 @@ function normalize() {
   }
   layout.tabs = layout.tabs.filter((t) => t.panes.length > 0);
   for (const t of cfg.terminals) {
-    if (!tabOfTerm(t.id)) layout.tabs.push({ id: uid(), groupId: t.groupId, panes: [t.id], dir: "row" });
+    if (!tabOfTerm(t.id) && !setupTerms.has(t.id)) layout.tabs.push({ id: uid(), groupId: t.groupId, panes: [t.id], dir: "row" });
   }
   if (!group(layout.activeGroup)) layout.activeGroup = cfg.groups[0]?.id;
   // Remove painéis cujo terminal sumiu.
@@ -1513,6 +1514,19 @@ async function boot() {
   // Fontes carregadas depois do 1º fit mudam o tamanho da célula.
   void document.fonts.ready.then(() => panes.forEach((p) => p.fitNow()));
   window.addEventListener("focus", focusActive);
+  const onboarding = () =>
+    void openOnboarding({
+      groups: () => cfg.groups,
+      reload: async () => {
+        cfg = { ...(await api.stateGet()), layout: cfg.layout };
+        normalize();
+        render();
+      },
+      openTerminal: (gid) => void newTerminal(gid),
+      onClose: focusActive,
+    });
+  window.addEventListener("coliseu:onboarding", onboarding);
+  if (shouldOnboard(cfg.terminals.length)) onboarding();
 }
 
 void boot();

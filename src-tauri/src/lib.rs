@@ -5,6 +5,7 @@ mod codex;
 mod config;
 mod context;
 mod notify;
+mod onboard;
 mod prs;
 mod pty;
 mod push;
@@ -338,6 +339,21 @@ async fn prs_whoami() -> Option<String> {
 }
 
 #[tauri::command]
+async fn setup_check() -> onboard::Check {
+    tauri::async_runtime::spawn_blocking(onboard::check).await.unwrap_or_default()
+}
+
+#[tauri::command]
+async fn setup_projects() -> Vec<String> {
+    tauri::async_runtime::spawn_blocking(onboard::projects).await.unwrap_or_default()
+}
+
+#[tauri::command]
+fn voice_set(on: bool) -> Res<()> {
+    onboard::voice_set(on).map_err(err)
+}
+
+#[tauri::command]
 fn remote_status(st: State<AppState>) -> remote::RemoteStatus {
     remote::status(&st.cfg.lock().remote)
 }
@@ -581,6 +597,9 @@ pub fn run() {
             push_devices,
             notify,
             terms_status,
+            setup_check,
+            setup_projects,
+            voice_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
