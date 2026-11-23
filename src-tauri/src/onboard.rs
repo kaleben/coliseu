@@ -20,6 +20,8 @@ pub struct Check {
     /// Celulares (Android/iOS) na mesma tailnet: (nome, online, sistema).
     pub ts_phones: Vec<(String, bool, String)>,
     pub voice: bool,
+    /// Pasta pessoal (para mostrar ~/… e abrir o seletor nela).
+    pub home: String,
 }
 
 const TOOLS: &str = "tmux claude node gh xdotool tailscale";
@@ -61,7 +63,7 @@ fn ts_operator() -> bool {
 
 pub fn check() -> Check {
     let tools = found_tools();
-    let mut c = Check { voice: voice_on(), ..Default::default() };
+    let mut c = Check { voice: voice_on(), home: home().to_string_lossy().into_owned(), ..Default::default() };
     if tools.iter().any(|t| t == "gh") {
         c.gh_user = crate::prs::gh_user();
     }

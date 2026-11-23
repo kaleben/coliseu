@@ -3,6 +3,7 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 export interface Group {
   id: string;
@@ -175,6 +176,7 @@ export interface SetupCheck {
   /** Celulares na mesma tailnet: [nome, online, sistema ("android" | "iOS")]. */
   tsPhones: [string, boolean, string][];
   voice: boolean;
+  home: string;
 }
 
 export interface Transport {
@@ -236,6 +238,8 @@ export interface Transport {
   setupCheck(): Promise<SetupCheck>;
   setupProjects(): Promise<string[]>;
   voiceSet(on: boolean): Promise<void>;
+  /** Seletor de pastas do sistema (null: cancelado). */
+  pickFolder(start?: string): Promise<string | null>;
 }
 
 const toBytes = (d: unknown): Uint8Array =>
@@ -300,6 +304,10 @@ export const tauriTransport: Transport = {
   setupCheck: () => invoke("setup_check"),
   setupProjects: () => invoke("setup_projects"),
   voiceSet: (on) => invoke("voice_set", { on }),
+  pickFolder: async (start) => {
+    const r = await openDialog({ directory: true, multiple: false, defaultPath: start, title: "Escolha a pasta do grupo" });
+    return typeof r === "string" ? r : null;
+  },
 };
 
 // ---------- Navegador (celular): WebSocket com o core ----------
@@ -499,6 +507,7 @@ function createWsTransport(): Transport {
     setupCheck: () => Promise.reject("disponível só no desktop"),
     setupProjects: () => Promise.resolve([]),
     voiceSet: () => Promise.reject("disponível só no desktop"),
+    pickFolder: () => Promise.resolve(null),
   };
 }
 

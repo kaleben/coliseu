@@ -43,7 +43,7 @@ interface Step {
 let host: OnboardingHost;
 let root: HTMLElement | null = null;
 let at = 0;
-let check: SetupCheck = { tools: [], tsRunning: false, tsHttps: false, tsOperator: false, tsPhones: [], voice: false };
+let check: SetupCheck = { tools: [], tsRunning: false, tsHttps: false, tsOperator: false, tsPhones: [], voice: false, home: "" };
 let projects: string[] = [];
 let created: Group[] = [];
 let draft = { name: "", path: "~/", color: COLORS[0] };
@@ -270,7 +270,7 @@ function group(el: HTMLElement) {
   const free = projects.filter((p) => !created.some((g) => g.cwd === p));
   const form = h(`<div class="ob-card">
       ${free.length ? `<div class="ob-field"><label>Projetos com git neste PC (toque para usar)</label><div class="ob-sugg">${free.map((f) => `<button type="button" class="${f === draft.path ? "on" : ""}" data-f="${esc(f)}">${esc(f.split("/").pop()!)}</button>`).join("")}</div></div>` : ""}
-      <div class="ob-field"><label for="ob-path">Pasta</label><input class="ob-input mono" id="ob-path" autocomplete="off" spellcheck="false"></div>
+      <div class="ob-field"><label for="ob-path">Pasta</label><div class="ob-folder"><input class="ob-input mono" id="ob-path" autocomplete="off" spellcheck="false"><button class="ob-btn" type="button" data-pick>📁 Escolher pasta…</button></div></div>
       <div class="ob-field"><label for="ob-name">Nome do grupo</label><input class="ob-input" id="ob-name" autocomplete="off" placeholder="ex.: Empresa, Pessoal, Cliente X"></div>
       <div class="ob-field"><label>Cor</label><div class="ob-swatches">${COLORS.map((c) => `<button type="button" aria-label="Cor ${c}" data-c="${c}" style="background:${c}" class="${c === draft.color ? "on" : ""}"></button>`).join("")}</div></div>
       <div class="ob-err"></div>
@@ -281,6 +281,19 @@ function group(el: HTMLElement) {
   path.value = draft.path;
   name.value = draft.name;
   path.oninput = () => (draft.path = path.value);
+  $("[data-pick]", form).onclick = async () => {
+    const hm = check.home;
+    const start = draft.path.startsWith("~") && hm ? hm + draft.path.slice(1) : draft.path;
+    const dir = await api.pickFolder(start || hm || undefined).catch(() => null);
+    if (!dir) return;
+    // Dentro da pasta pessoal vira ~/… (o grupo continua valendo se o HOME mudar de nome).
+    draft.path = hm && (dir === hm || dir.startsWith(hm + "/")) ? "~" + dir.slice(hm.length) || "~" : dir;
+    path.value = draft.path;
+    if (!draft.name.trim()) {
+      draft.name = dir.split("/").filter(Boolean).pop() ?? "";
+      name.value = draft.name;
+    }
+  };
   name.oninput = () => (draft.name = name.value);
   form.querySelectorAll<HTMLElement>("[data-f]").forEach((b) => (b.onclick = () => {
     draft.path = b.dataset.f!;

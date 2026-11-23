@@ -156,3 +156,6 @@
 .ob-wait { margin: 0; color: var(--ob-faint); font-size: 13px; animation: ob-pulse 2s ease-in-out infinite; }
 @keyframes ob-pulse { 50% { opacity: .45; } }
 .ob-q { color: var(--ob-muted); margin-right: 4px; }
+.ob-folder { display: flex; gap: 10px; }
+.ob-folder .ob-input { flex: 1; min-width: 0; }
+.ob-folder .ob-btn { height: 46px; }
