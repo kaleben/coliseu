@@ -43,7 +43,7 @@ interface Step {
 let host: OnboardingHost;
 let root: HTMLElement | null = null;
 let at = 0;
-let check: SetupCheck = { tools: [], tsRunning: false, tsHttps: false, tsOperator: false, voice: false };
+let check: SetupCheck = { tools: [], tsRunning: false, tsHttps: false, tsOperator: false, tsPhones: [], voice: false };
 let projects: string[] = [];
 let created: Group[] = [];
 let draft = { name: "", path: "~/", color: COLORS[0] };
@@ -251,7 +251,9 @@ async function account(el: HTMLElement) {
       }
     };
     $("[data-finish]", login).onclick = finish;
-    input.onkeydown = (e) => e.key === "Enter" && void finish();
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") void finish();
+    };
     input.focus();
   };
   idle();
@@ -334,52 +336,162 @@ function github(el: HTMLElement) {
   }
 }
 
+// Celular: um passo de cada vez, primeiro no PC e depois no celular. Os feitos
+// viram uma linha com ✓; os próximos nem aparecem (só a contagem).
+let plat: "android" | "ios" | null = null;
+let phoneOpened = false;
+let phoneApp = false;
+const STORE = {
+  android: "https://play.google.com/store/apps/details?id=com.tailscale.ipn",
+  ios: "https://apps.apple.com/app/tailscale/id1470499037",
+};
+
+function qrNode(text: string, caption: string) {
+  const qr = qrcode(0, "M");
+  qr.addData(text);
+  qr.make();
+  const b = h(`<div class="ob-qr"><div class="code">${qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true })}</div><p></p></div>`).firstElementChild as HTMLElement;
+  $("p", b).textContent = caption;
+  return b;
+}
+
+function platPicker(onPick: () => void) {
+  const b = h(`<div class="ob-row"><span class="ob-q">Qual é o seu celular?</span><button class="ob-btn" type="button" data-p="android">🤖 Android</button><button class="ob-btn" type="button" data-p="ios">📱 iPhone</button></div>`)
+    .firstElementChild as HTMLElement;
+  b.querySelectorAll<HTMLElement>("[data-p]").forEach((x) => (x.onclick = () => {
+    plat = x.dataset.p as "android" | "ios";
+    onPick();
+  }));
+  return b;
+}
+
 async function phone(el: HTMLElement) {
   const st = await api.remoteStatus().catch(() => null);
   remoteOn = !!st?.enabled;
   phoneUrl = st?.urls.find((u) => !u.includes("127.0.0.1")) ?? "";
-  el.append(head("📱", "Leve a arena no bolso.",
-    "Acompanhe e responda os agentes pelo celular, com notificações. Funciona pela sua rede privada do Tailscale: nada fica aberto na internet.", "opcional"));
-  const subs = document.createElement("div");
-  subs.className = "ob-subs";
-  el.append(subs);
-  const sub = (n: number, ok: boolean, title: string, body?: Node | null) => {
-    const s = h(`<div class="ob-sub ${ok ? "ok" : ""}"><span class="n">${ok ? "✓" : n}</span><div class="body"><b></b></div></div>`).firstElementChild as HTMLElement;
-    $("b", s).textContent = title;
-    if (body) $(".body", s).append(body);
-    subs.append(s);
-  };
   const ts = has("tailscale") && check.tsRunning;
-  sub(1, ts, "Instale o Tailscale neste PC e entre na sua conta",
-    ts ? null : termLine(has("tailscale") ? "sudo tailscale up" : "curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up", () => has("tailscale") && check.tsRunning));
+  const phones = check.tsPhones;
+  if (!plat && phones.length) plat = phones.some(([, , os]) => os === "iOS") ? "ios" : "android";
+  el.append(head("📱", "Leve a arena no bolso.",
+    "Responda os agentes pelo celular e receba os avisos lá. Funciona pela sua rede privada do Tailscale: nada fica aberto na internet.", "opcional"));
 
-  const httpsBody = h(`<div class="ob-row"><button class="ob-btn" type="button" data-dns>Abrir o painel DNS ↗</button><button class="ob-btn" type="button" data-recheck>Já liguei</button></div>`)
-    .firstElementChild as HTMLElement;
-  $("[data-dns]", httpsBody).onclick = () => api.openUrl("https://login.tailscale.com/admin/dns");
-  $("[data-recheck]", httpsBody).onclick = async (e) => {
-    (e.target as HTMLButtonElement).textContent = "Verificando…";
-    await refresh();
-    paint();
+  type Stage = { side: "pc" | "cel"; done: boolean; title: string; doneTitle?: string; body: () => Node; poll?: boolean };
+  const p = (html: string) => h(`<p class="ob-say">${html}</p>`);
+  const frag = (...n: Node[]) => {
+    const f = document.createDocumentFragment();
+    f.append(...n);
+    return f;
   };
-  sub(2, check.tsHttps, "No painel do Tailscale, ligue MagicDNS e HTTPS Certificates", check.tsHttps || !ts ? null : httpsBody);
+  const stages: Stage[] = [
+    {
+      side: "pc", done: ts, title: "Conecte este PC ao Tailscale", doneTitle: "PC na sua rede Tailscale",
+      body: () => frag(
+        p("O Tailscale liga seus aparelhos numa rede só sua. Rode abaixo e entre na sua conta quando o navegador abrir (é grátis)."),
+        termLine(has("tailscale") ? "sudo tailscale up" : "curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up", () => has("tailscale") && check.tsRunning),
+      ),
+    },
+    {
+      side: "pc", done: check.tsHttps, title: "Ligue o HTTPS da sua rede", doneTitle: "HTTPS ligado", poll: true,
+      body: () => {
+        const b = h(`<div class="ob-row"><button class="ob-btn primary" type="button">Abrir o painel do Tailscale ↗</button></div>`);
+        ($("button", b) as HTMLElement).onclick = () => api.openUrl("https://login.tailscale.com/admin/dns");
+        return frag(p("No painel, em <b>DNS</b>, ative <b>MagicDNS</b> e <b>HTTPS Certificates</b>. Sem HTTPS o celular não instala o app nem recebe avisos."), b,
+          h(`<p class="ob-wait">⏳ Esperando o HTTPS ligar…</p>`));
+      },
+    },
+    {
+      side: "pc", done: check.tsOperator, title: "Autorize o Coliseu a pedir o certificado", doneTitle: "Certificado autorizado",
+      body: () => frag(p("Uma vez só. O sudo pede a sua senha aqui mesmo."), termLine("sudo tailscale set --operator=$USER", () => check.tsOperator)),
+    },
+    {
+      side: "pc", done: remoteOn && !!phoneUrl, title: "Ligue o acesso pelo celular", doneTitle: "Acesso pelo celular ligado",
+      body: () => {
+        const b = h(`<div class="ob-row"><button class="ob-btn primary" type="button">Ligar o acesso</button></div>`);
+        ($("button", b) as HTMLElement).onclick = async () => {
+          await api.remoteSet(true).catch(() => {});
+          paint();
+        };
+        return frag(p("O Coliseu passa a atender só na sua rede do Tailscale, com uma senha embutida no link."), b);
+      },
+    },
+    {
+      side: "cel", done: phones.length > 0, title: "Instale o Tailscale no celular", poll: true,
+      doneTitle: phones.length ? `Celular na rede: ${phones.map(([n]) => n).join(", ")}` : "",
+      body: () => {
+        if (!plat) return platPicker(() => paint());
+        return frag(
+          qrNode(STORE[plat], `Aponte a câmera do celular para baixar o Tailscale${plat === "ios" ? " na App Store" : " na Play Store"}. Depois entre com a mesma conta que você usou no PC.`),
+          h(`<p class="ob-wait">⏳ Esperando o celular aparecer na sua rede…</p>`),
+        );
+      },
+    },
+    {
+      side: "cel", done: phoneOpened, title: "Abra o Coliseu no celular", doneTitle: "Coliseu aberto no celular",
+      body: () => {
+        const b = h(`<div class="ob-row"><button class="ob-btn primary" type="button">Abriu no celular</button></div>`);
+        ($("button", b) as HTMLElement).onclick = () => {
+          phoneOpened = true;
+          paint();
+        };
+        return frag(qrNode(phoneUrl, "Com o Tailscale ligado no celular, aponte a câmera para o código. O Coliseu abre no navegador."), b);
+      },
+    },
+    {
+      side: "cel", done: phoneApp, title: "Coloque na tela inicial", doneTitle: "Virou app no celular",
+      body: () => {
+        if (!plat) return platPicker(() => paint());
+        const b = h(`<div class="ob-row"><button class="ob-btn primary" type="button">Feito</button></div>`);
+        ($("button", b) as HTMLElement).onclick = () => {
+          phoneApp = true;
+          paint();
+        };
+        return frag(
+          p(plat === "ios"
+            ? "No Safari, toque em <b>Compartilhar</b> → <b>Adicionar à Tela de Início</b>."
+            : "No Chrome, toque no menu <b>⋮</b> → <b>Adicionar à tela inicial</b>."),
+          p("Abra pelo ícone novo e toque em <b>Receber notificações</b>. Pronto: os avisos chegam no celular."),
+          b,
+        );
+      },
+    },
+  ];
 
-  sub(3, check.tsOperator, "Deixe o Coliseu pedir o certificado HTTPS",
-    check.tsOperator || !check.tsHttps ? null : termLine("sudo tailscale set --operator=$USER", () => check.tsOperator));
+  const cur = stages.findIndex((x) => !x.done);
+  const sides = (side: "pc" | "cel") => {
+    const all = stages.filter((x) => x.side === side);
+    const n = all.filter((x) => x.done).length;
+    const now = cur >= 0 && stages[cur].side === side;
+    return `<div class="ob-side ${n === all.length ? "done" : now ? "now" : ""}"><span>${side === "pc" ? "💻 Neste PC" : "📱 No celular"}</span><small>${n === all.length ? "✓ pronto" : `${n} de ${all.length}`}</small></div>`;
+  };
+  el.append(h(`<div class="ob-sides">${sides("pc")}${sides("cel")}</div>`));
 
-  let body: Node | null = null;
-  if (remoteOn && phoneUrl) {
-    const qr = qrcode(0, "M");
-    qr.addData(phoneUrl);
-    qr.make();
-    body = h(`<div class="ob-qr"><div class="code">${qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true })}</div><p>Instale o Tailscale também no celular, na mesma conta. Depois de abrir, use "Adicionar à tela inicial" para virar app.</p></div>`);
-  } else if (check.tsOperator) {
-    body = h(`<div class="ob-row"><button class="ob-btn primary" type="button">Ligar o acesso pelo celular</button></div>`);
-    ($("button", body as DocumentFragment) as HTMLElement).onclick = async () => {
-      await api.remoteSet(true).catch(() => {});
-      paint();
-    };
+  const list = document.createElement("div");
+  list.className = "ob-stages";
+  stages.forEach((x, i) => {
+    if (x.done) {
+      const d = h(`<div class="ob-stage-done"><span>✓</span><span></span></div>`);
+      ($("span:last-child", d) as HTMLElement).textContent = x.doneTitle || x.title;
+      list.append(d);
+    } else if (i === cur) {
+      const c = h(`<div class="ob-card ob-stage"><div class="ob-stage-h"><span class="n">${i + 1}</span><b></b></div></div>`).firstElementChild as HTMLElement;
+      $("b", c).textContent = x.title;
+      c.append(x.body());
+      list.append(c);
+    }
+  });
+  const left = stages.filter((x, i) => !x.done && i > cur).length;
+  if (cur < 0) list.append(h(`<p class="ob-say big">🎉 Pronto! O celular já acompanha a arena.</p>`));
+  else if (left) list.append(h(`<p class="ob-hint flat">+ ${left} passo${left > 1 ? "s" : ""} depois deste</p>`));
+  el.append(list);
+
+  // Passos que dependem de algo fora do app (painel, celular): confere sozinho.
+  if (cur >= 0 && stages[cur].poll) {
+    stepTimer = window.setInterval(async () => {
+      const before = JSON.stringify(check);
+      await refresh();
+      if (JSON.stringify(check) !== before) void paint();
+    }, 3000);
   }
-  sub(4, remoteOn && !!phoneUrl, remoteOn && phoneUrl ? "Acesso ligado. Aponte a câmera do celular para o QR:" : "Ligue o acesso e escaneie o QR no celular", body);
 }
 
 function notify(el: HTMLElement) {
@@ -445,9 +557,12 @@ const steps: Step[] = [
 ];
 
 let painting = 0;
+/** Verificação periódica do passo atual (parada a cada troca de tela). */
+let stepTimer = 0;
 async function paint() {
   if (!root) return;
   closeLive();
+  clearInterval(stepTimer);
   const me = ++painting;
   const st = steps[at];
   $("#ob-bar", root).innerHTML = steps.map((_, i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}"></span>`).join("");
@@ -471,6 +586,7 @@ function go(i: number) {
 
 function close() {
   closeLive();
+  clearInterval(stepTimer);
   settings.onboarding.done = true;
   saveSettings();
   root?.remove();

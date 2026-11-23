@@ -17,6 +17,8 @@ pub struct Check {
     pub ts_https: bool,
     /// Este usuário pode pedir o certificado (tailscale set --operator).
     pub ts_operator: bool,
+    /// Celulares (Android/iOS) na mesma tailnet: (nome, online, sistema).
+    pub ts_phones: Vec<(String, bool, String)>,
     pub voice: bool,
 }
 
@@ -67,6 +69,13 @@ pub fn check() -> Check {
         if let Some(s) = crate::tls::status_json() {
             c.ts_running = s["BackendState"] == "Running";
             c.ts_https = s["CertDomains"].as_array().is_some_and(|a| !a.is_empty());
+            if let Some(peers) = s["Peer"].as_object() {
+                c.ts_phones = peers
+                    .values()
+                    .filter(|p| matches!(p["OS"].as_str(), Some("android" | "iOS")))
+                    .map(|p| (p["HostName"].as_str().unwrap_or("celular").to_owned(), p["Online"] == true, p["OS"].as_str().unwrap_or("").to_owned()))
+                    .collect();
+            }
         }
         if c.ts_running {
             c.ts_operator = ts_operator();

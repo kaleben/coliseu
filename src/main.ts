@@ -201,6 +201,7 @@ function cyclePane(delta: number) {
 
 function focusActive() {
   if (isAppHome()) return; // terminal fora da tela: não abre o teclado do celular
+  if (document.querySelector(".onboarding")) return; // primeiros passos abertos: o foco é deles
   const id = activePaneId();
   if (!id) return;
   requestAnimationFrame(() => {

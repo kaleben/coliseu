@@ -138,3 +138,21 @@
 .ob-foot .ob-wrap { display: flex; align-items: center; gap: 14px; }
 .ob-foot .spacer { flex: 1; }
 @media (prefers-reduced-motion: reduce) { .ob-step { animation: none; } }
+
+/* celular: lado do PC e lado do celular, um passo de cada vez */
+.ob-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ob-side { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--ob-line); color: var(--ob-faint); font-weight: 500; }
+.ob-side small { font: 500 12px var(--ob-mono); }
+.ob-side.now { color: var(--ob-text); border-color: var(--ob-accent); }
+.ob-side.done { color: var(--ob-ok); border-color: rgba(61, 220, 132, .35); }
+.ob-stages { display: flex; flex-direction: column; gap: 10px; }
+.ob-stage-done { display: flex; gap: 12px; align-items: center; color: var(--ob-muted); font-size: 14px; padding: 0 4px; }
+.ob-stage-done span:first-child { color: var(--ob-ok); width: 18px; text-align: center; }
+.ob-stage-h { display: flex; align-items: center; gap: 12px; font-size: 17px; }
+.ob-stage-h .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--ob-accent); color: #000; font: 600 13px var(--ob-mono); flex: none; }
+.ob-say { margin: 0; color: var(--ob-muted); max-width: 60ch; }
+.ob-say b { color: var(--ob-text); font-weight: 600; }
+.ob-say.big { color: var(--ob-text); font-size: 17px; }
+.ob-wait { margin: 0; color: var(--ob-faint); font-size: 13px; animation: ob-pulse 2s ease-in-out infinite; }
+@keyframes ob-pulse { 50% { opacity: .45; } }
+.ob-q { color: var(--ob-muted); margin-right: 4px; }

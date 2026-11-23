@@ -172,6 +172,8 @@ export interface SetupCheck {
   tsRunning: boolean;
   tsHttps: boolean;
   tsOperator: boolean;
+  /** Celulares na mesma tailnet: [nome, online, sistema ("android" | "iOS")]. */
+  tsPhones: [string, boolean, string][];
   voice: boolean;
 }
 
