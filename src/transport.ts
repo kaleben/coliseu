@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { homeDir } from "@tauri-apps/api/path";
 
 export interface Group {
   id: string;
@@ -305,8 +306,12 @@ export const tauriTransport: Transport = {
   setupProjects: () => invoke("setup_projects"),
   voiceSet: (on) => invoke("voice_set", { on }),
   pickFolder: async (start) => {
-    const r = await openDialog({ directory: true, multiple: false, defaultPath: start, title: "Escolha a pasta do grupo" });
-    return typeof r === "string" ? r : null;
+    const hm = (await homeDir().catch(() => "")).replace(/\/+$/, "");
+    const from = start?.trim().startsWith("~") && hm ? hm + start.trim().slice(1) : start?.trim() || hm || undefined;
+    const r = await openDialog({ directory: true, multiple: false, defaultPath: from, title: "Escolha a pasta do grupo" });
+    if (typeof r !== "string") return null;
+    // Dentro da pasta pessoal vira ~/… (o grupo continua valendo se o HOME mudar de nome).
+    return hm && (r === hm || r.startsWith(hm + "/")) ? "~" + r.slice(hm.length) : r;
   },
 };
 

@@ -242,7 +242,7 @@ async function moveTerminal(tid: string) {
 async function editGroup(g?: Group) {
   const r = await formDialog(g ? `Editar grupo ${g.name}` : "Novo grupo", [
     { key: "name", label: "Nome", value: g?.name ?? "" },
-    { key: "cwd", label: "Pasta", value: g?.cwd ?? "~/" },
+    { key: "cwd", label: "Pasta", value: g?.cwd ?? "~/", type: "folder" },
     { key: "color", label: "Cor", value: g?.color ?? "#a855f7", type: "color" },
     {
       key: "account",
@@ -1003,7 +1003,9 @@ function formDialog(title: string, fields: Field[], extra?: string): Promise<Rec
             ? `<label><span class="label">${esc(f.label)}</span><select name="${f.key}">${f.options
                 .map(([v, l]) => `<option value="${esc(v)}" ${v === f.value ? "selected" : ""}>${esc(l)}</option>`)
                 .join("")}</select></label>`
-            : `<label><span class="label">${esc(f.label)}</span><input name="${f.key}" type="${f.type ?? "text"}" value="${esc(f.value)}" /></label>`,
+            : f.type === "folder"
+              ? `<label><span class="label">${esc(f.label)}</span><span class="folder-row"><input name="${f.key}" type="text" value="${esc(f.value)}" />${api.native ? `<button type="button" data-pick="${f.key}">📁 Escolher…</button>` : ""}</span></label>`
+              : `<label><span class="label">${esc(f.label)}</span><input name="${f.key}" type="${f.type ?? "text"}" value="${esc(f.value)}" /></label>`,
         )
         .join("")}
       <div class="actions">
@@ -1024,6 +1026,15 @@ function formDialog(title: string, fields: Field[], extra?: string): Promise<Rec
     };
     form.querySelector<HTMLElement>("[data-act=cancel]")!.onclick = () => done(null);
     form.querySelector<HTMLElement>("[data-act=extra]")?.addEventListener("click", () => done("extra"));
+    // Seletor de pastas do sistema; o nome vazio vem da pasta escolhida.
+    form.querySelectorAll<HTMLElement>("[data-pick]").forEach((b) => (b.onclick = async () => {
+      const input = form.querySelector<HTMLInputElement>(`input[name="${b.dataset.pick}"]`)!;
+      const dir = await api.pickFolder(input.value).catch(() => null);
+      if (!dir) return;
+      input.value = dir;
+      const name = form.querySelector<HTMLInputElement>('input[name="name"]');
+      if (name && !name.value.trim()) name.value = dir.split("/").filter((p) => p && p !== "~").pop() ?? "";
+    }));
     // Corpo em bloco: um handler on* que devolve false cancela a tecla (nada se digitava).
     form.onkeydown = (e) => {
       if (e.key === "Escape") done(null);

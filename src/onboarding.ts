@@ -282,15 +282,12 @@ function group(el: HTMLElement) {
   name.value = draft.name;
   path.oninput = () => (draft.path = path.value);
   $("[data-pick]", form).onclick = async () => {
-    const hm = check.home;
-    const start = draft.path.startsWith("~") && hm ? hm + draft.path.slice(1) : draft.path;
-    const dir = await api.pickFolder(start || hm || undefined).catch(() => null);
+    const dir = await api.pickFolder(draft.path).catch(() => null);
     if (!dir) return;
-    // Dentro da pasta pessoal vira ~/… (o grupo continua valendo se o HOME mudar de nome).
-    draft.path = hm && (dir === hm || dir.startsWith(hm + "/")) ? "~" + dir.slice(hm.length) || "~" : dir;
-    path.value = draft.path;
+    draft.path = dir;
+    path.value = dir;
     if (!draft.name.trim()) {
-      draft.name = dir.split("/").filter(Boolean).pop() ?? "";
+      draft.name = dir.split("/").filter((p) => p && p !== "~").pop() ?? "";
       name.value = draft.name;
     }
   };
