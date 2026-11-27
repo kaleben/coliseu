@@ -19,6 +19,8 @@ import { initInstall } from "./mobile/install";
 import { homeTab } from "./mobile/home";
 import { createConvoBar } from "./mobile/convo";
 import { accountsTab, prsTab } from "./mobile/pages";
+import { filesOpen, initFiles, renderFiles, toggleFiles } from "./files";
+import { initViewer, openFile } from "./viewer";
 
 // ---------- Estado ----------
 
@@ -268,6 +270,7 @@ async function editGroup(g?: Group) {
     cwd: r.cwd.trim() || "~/",
     color: r.color,
     account: r.account || null,
+    folders: g?.folders ?? [],
   };
   cfg = await api.groupUpsert(next);
   render();
@@ -322,6 +325,7 @@ function handleKey(e: KeyboardEvent): boolean {
       case "KeyR": { const id = activePaneId(); if (id) inlineRename(id); return true; }
       case "KeyF": { const id = activePaneId(); if (id) panes.get(id)?.openSearch(); return true; }
       case "KeyP": { if (prsEnabled()) setView(view === "prs" ? "terms" : "prs"); return true; }
+      case "KeyB": { if (!MOBILE) toggleFiles(); return true; }
     }
   }
   if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.key === "PageUp" || e.key === "PageDown")) {
@@ -347,6 +351,7 @@ function handleKey(e: KeyboardEvent): boolean {
 
 document.addEventListener("keydown", (e) => {
   if ((e.target as HTMLElement).closest?.(".modal")) return;
+  if (view === "file" && (e.target as HTMLElement).closest?.("#file-view")) return;
   if (handleKey(e)) e.preventDefault();
 });
 
@@ -986,6 +991,7 @@ function render() {
   renderSidebar();
   renderTabs();
   renderWorkspace();
+  renderFiles();
 }
 
 // ---------- Diálogos ----------
@@ -1099,19 +1105,20 @@ function toast(msg: string) {
 
 // ---------- Tela de PRs ----------
 
-let view: "terms" | "prs" = "terms";
+let view: "terms" | "prs" | "file" = "terms";
 
-function setView(v: "terms" | "prs") {
+function setView(v: "terms" | "prs" | "file") {
   if (v === "prs" && !prsEnabled()) v = "terms";
   view = v;
   const prs = v === "prs";
-  $("#tabbar").hidden = prs;
-  $("#workspace").hidden = prs;
+  $("#tabbar").hidden = v !== "terms";
+  $("#workspace").hidden = v !== "terms";
   $("#prs-view").hidden = !prs;
+  $("#file-view").hidden = v !== "file";
   document.body.classList.toggle("view-prs", prs);
   if (prs) renderPrs();
   renderNav();
-  if (!prs) {
+  if (v === "terms") {
     requestAnimationFrame(() => panes.forEach((p) => p.fitNow()));
     focusActive();
   }
@@ -1125,6 +1132,10 @@ function renderNav() {
   b.classList.toggle("on", view === "prs");
   b.innerHTML = `${icon("pr", 15)}<span>Pull requests</span>
     ${w ? `<b class="pill s-waiting" title="aguardando você">${w}</b>` : ""}<span class="num">${totalCount() || ""}</span>`;
+  const f = $("#nav-files");
+  f.hidden = MOBILE;
+  f.classList.toggle("on", filesOpen());
+  f.innerHTML = `${icon("folder", 15)}<span>Arquivos</span>`;
 }
 
 function notifyPr(title: string, body: string) {
@@ -1517,6 +1528,39 @@ async function boot() {
     sidebarWidth: l?.sidebarWidth,
   };
   initSidebarResize();
+  if (!MOBILE) {
+    initFiles({
+      groups: () => cfg.groups,
+      activeGroupId,
+      openFile,
+      setFolders: async (gid, folders) => {
+        const g = group(gid);
+        if (!g) return;
+        cfg = { ...(await api.groupUpsert({ ...g, folders })), layout: cfg.layout };
+        render();
+      },
+      pickFolder: (start) => api.pickFolder(start),
+      insertPath: (path) => {
+        const id = activePaneId();
+        if (!id) return toast("Nenhum terminal ativo");
+        api.termInput(id, `${path} `);
+        focusActive();
+      },
+      newTerminalAt: (gid, cwd) =>
+        void api
+          .termCreate(gid, { cwd })
+          .then((t) => placeTerminal(t, gid))
+          .catch((e) => toast(`Erro ao criar terminal: ${e}`)),
+      contextMenu,
+      toast,
+      onResize: () => {
+        renderNav();
+        requestAnimationFrame(() => panes.forEach((p) => p.fitNow()));
+      },
+    });
+    $("#nav-files").addEventListener("click", () => toggleFiles());
+    initViewer({ show: () => setView("file"), hide: () => setView("terms"), toast, confirm: confirmDialog });
+  }
   await pollStatus();
   render();
   if (MOBILE) setupApp();

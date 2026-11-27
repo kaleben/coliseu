@@ -11,6 +11,8 @@ pub struct Group {
     /// Conta Claude padrão do grupo (fase 3).
     #[serde(default)]
     pub account: Option<String>,
+    #[serde(default)]
+    pub folders: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -108,6 +110,7 @@ fn defaults() -> Config {
         color: color.into(),
         cwd: cwd.into(),
         account: None,
+        folders: vec![],
     };
     Config {
         // Primeiro uso: um grupo genérico na pasta pessoal (o usuário cria os dele).
