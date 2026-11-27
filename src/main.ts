@@ -986,8 +986,29 @@ function divider(tab: Tab, i: number) {
   return d;
 }
 
+function readableOn(hex: string) {
+  const n = parseInt(hex.slice(1), 16);
+  const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const l = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return l > 0.35 ? "#0b0b0e" : "#ffffff";
+}
+
+function applyGroupAccent() {
+  const main = $("#main");
+  const color = normalizeHex(group(activeGroupId())?.color ?? "");
+  if (!color) {
+    for (const k of ["--accent", "--accent-hover", "--accent-fg", "--accent-soft"]) main.style.removeProperty(k);
+    return;
+  }
+  main.style.setProperty("--accent", color);
+  main.style.setProperty("--accent-hover", `color-mix(in srgb, ${color} 82%, #fff)`);
+  main.style.setProperty("--accent-fg", readableOn(color));
+  main.style.setProperty("--accent-soft", `color-mix(in srgb, ${color} 14%, transparent)`);
+}
+
 function render() {
   normalize();
+  applyGroupAccent();
   renderSidebar();
   renderTabs();
   renderWorkspace();
@@ -997,6 +1018,13 @@ function render() {
 // ---------- Diálogos ----------
 
 type Field = { key: string; label: string; value: string; type?: string; options?: [string, string][] };
+
+function normalizeHex(v: string): string | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v.trim());
+  if (!m) return null;
+  const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join("") : m[1];
+  return `#${h.toLowerCase()}`;
+}
 
 function formDialog(title: string, fields: Field[], extra?: string): Promise<Record<string, string> | "extra" | null> {
   return new Promise((resolve) => {
@@ -1009,7 +1037,9 @@ function formDialog(title: string, fields: Field[], extra?: string): Promise<Rec
             ? `<label><span class="label">${esc(f.label)}</span><select name="${f.key}">${f.options
                 .map(([v, l]) => `<option value="${esc(v)}" ${v === f.value ? "selected" : ""}>${esc(l)}</option>`)
                 .join("")}</select></label>`
-            : f.type === "folder"
+            : f.type === "color"
+              ? `<label><span class="label">${esc(f.label)}</span><span class="color-row"><input type="color" data-color-for="${f.key}" value="${esc(normalizeHex(f.value) ?? "#a855f7")}" aria-label="Seletor de cor" /><input name="${f.key}" type="text" class="hex-input" value="${esc(normalizeHex(f.value) ?? f.value)}" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#a855f7" aria-label="Cor em hex" /></span></label>`
+              : f.type === "folder"
               ? `<label><span class="label">${esc(f.label)}</span><span class="folder-row"><input name="${f.key}" type="text" value="${esc(f.value)}" />${api.native ? `<button type="button" data-pick="${f.key}">📁 Escolher…</button>` : ""}</span></label>`
               : `<label><span class="label">${esc(f.label)}</span><input name="${f.key}" type="${f.type ?? "text"}" value="${esc(f.value)}" /></label>`,
         )
@@ -1026,8 +1056,32 @@ function formDialog(title: string, fields: Field[], extra?: string): Promise<Rec
       resolve(v);
       focusActive();
     };
+    form.querySelectorAll<HTMLInputElement>("[data-color-for]").forEach((picker) => {
+      const text = form.querySelector<HTMLInputElement>(`input[name="${picker.dataset.colorFor}"]`)!;
+      picker.oninput = () => {
+        text.value = picker.value;
+        text.classList.remove("invalid");
+      };
+      text.oninput = () => {
+        const hex = normalizeHex(text.value);
+        text.classList.toggle("invalid", !hex && text.value.trim() !== "");
+        if (hex) picker.value = hex;
+      };
+      text.onblur = () => {
+        const hex = normalizeHex(text.value);
+        if (hex) text.value = hex;
+      };
+    });
     form.onsubmit = (e) => {
       e.preventDefault();
+      const bad = [...form.querySelectorAll<HTMLInputElement>(".hex-input")].find((i) => !normalizeHex(i.value));
+      if (bad) {
+        bad.classList.add("invalid");
+        bad.focus();
+        bad.select();
+        return;
+      }
+      form.querySelectorAll<HTMLInputElement>(".hex-input").forEach((i) => (i.value = normalizeHex(i.value)!));
       done(Object.fromEntries(new FormData(form)) as Record<string, string>);
     };
     form.querySelector<HTMLElement>("[data-act=cancel]")!.onclick = () => done(null);

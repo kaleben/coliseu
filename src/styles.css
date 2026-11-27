@@ -642,6 +642,10 @@ body.mobile #files { display: none; }
 }
 .modal input:focus, .modal select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .modal input[type="color"] { padding: 3px; height: 34px; width: 64px; }
+.color-row { display: flex; gap: 8px; align-items: center; }
+.color-row input[type="color"] { flex: none; width: 44px; height: 36px; padding: 3px; cursor: pointer; }
+.modal .color-row .hex-input { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 13px; text-transform: lowercase; }
+.modal .color-row .hex-input.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
 .modal .folder-row { display: flex; gap: 8px; }
 .modal .folder-row input { flex: 1; min-width: 0; }
 .modal .folder-row button { flex: none; }
