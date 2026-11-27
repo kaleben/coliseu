@@ -1,8 +1,27 @@
 //! Notificações nativas (D-Bus / GNOME). Clicar abre o Coliseu no terminal certo.
 
-use notify_rust::{Hint, Notification, Timeout};
-use tauri::{AppHandle, Emitter, Manager};
+use notify_rust::Notification;
+#[cfg(target_os = "linux")]
+use notify_rust::{Hint, Timeout};
+use tauri::AppHandle;
+#[cfg(target_os = "linux")]
+use tauri::{Emitter, Manager};
 
+#[cfg(target_os = "macos")]
+pub fn send(_app: AppHandle, title: String, body: String, _term_id: Option<String>, sound: bool) {
+    std::thread::spawn(move || {
+        let mut n = Notification::new();
+        n.summary(&title).body(&body);
+        if sound {
+            n.sound_name("default");
+        }
+        if let Err(e) = n.show() {
+            eprintln!("[coliseu] falha ao notificar: {e}");
+        }
+    });
+}
+
+#[cfg(target_os = "linux")]
 pub fn send(app: AppHandle, title: String, body: String, term_id: Option<String>, sound: bool) {
     std::thread::spawn(move || {
         let mut n = Notification::new();
@@ -46,6 +65,7 @@ pub fn send(app: AppHandle, title: String, body: String, term_id: Option<String>
 }
 
 /// Traz a janela do Coliseu para a frente no X11 (xdotool). false se não deu.
+#[cfg(target_os = "linux")]
 fn activate_x11() -> bool {
     use std::process::Command;
     if std::env::var("XDG_SESSION_TYPE").is_ok_and(|t| t != "x11") {
