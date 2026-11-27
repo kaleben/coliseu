@@ -4,6 +4,7 @@ mod chat;
 mod codex;
 mod config;
 mod context;
+mod files;
 mod notify;
 mod onboard;
 mod prs;
@@ -344,6 +345,38 @@ async fn setup_check() -> onboard::Check {
 }
 
 #[tauri::command]
+fn fs_list(st: State<AppState>, path: String) -> Res<Vec<files::Entry>> {
+    let groups = st.cfg.lock().groups.clone();
+    files::list(&groups, &path)
+}
+
+#[tauri::command]
+async fn fs_read(st: State<'_, AppState>, path: String) -> Res<files::FileContent> {
+    let groups = st.cfg.lock().groups.clone();
+    tauri::async_runtime::spawn_blocking(move || files::read(&groups, &path)).await.map_err(err)?
+}
+
+#[tauri::command]
+async fn fs_write(st: State<'_, AppState>, path: String, text: String, mtime: Option<u64>) -> Res<u64> {
+    let groups = st.cfg.lock().groups.clone();
+    tauri::async_runtime::spawn_blocking(move || files::write(&groups, &path, &text, mtime)).await.map_err(err)?
+}
+
+#[tauri::command]
+fn fs_open(st: State<AppState>, path: String) -> Res<()> {
+    let groups = st.cfg.lock().groups.clone();
+    let p = files::inside_groups(&groups, &path)?;
+    tauri_plugin_opener::open_path(p, None::<&str>).map_err(err)
+}
+
+#[tauri::command]
+fn fs_reveal(st: State<AppState>, path: String) -> Res<()> {
+    let groups = st.cfg.lock().groups.clone();
+    let p = files::inside_groups(&groups, &path)?;
+    tauri_plugin_opener::reveal_item_in_dir(p).map_err(err)
+}
+
+#[tauri::command]
 async fn setup_projects() -> Vec<String> {
     tauri::async_runtime::spawn_blocking(onboard::projects).await.unwrap_or_default()
 }
@@ -601,6 +634,11 @@ pub fn run() {
             setup_check,
             setup_projects,
             voice_set,
+            fs_list,
+            fs_read,
+            fs_write,
+            fs_open,
+            fs_reveal,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

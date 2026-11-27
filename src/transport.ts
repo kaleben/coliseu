@@ -12,6 +12,7 @@ export interface Group {
   color: string;
   cwd: string;
   account?: string | null;
+  folders?: string[];
 }
 
 export interface Terminal {
@@ -180,6 +181,21 @@ export interface SetupCheck {
   home: string;
 }
 
+export interface FsEntry {
+  name: string;
+  path: string;
+  dir: boolean;
+}
+
+export interface FsContent {
+  path: string;
+  text: string;
+  size: number;
+  binary: boolean;
+  truncated: boolean;
+  mtime: number;
+}
+
 export interface Transport {
   /** true no app desktop (Tauri); false no navegador (celular). */
   readonly native: boolean;
@@ -241,6 +257,11 @@ export interface Transport {
   voiceSet(on: boolean): Promise<void>;
   /** Seletor de pastas do sistema (null: cancelado). */
   pickFolder(start?: string): Promise<string | null>;
+  fsList(path: string): Promise<FsEntry[]>;
+  fsRead(path: string): Promise<FsContent>;
+  fsWrite(path: string, text: string, mtime?: number): Promise<number>;
+  fsOpen(path: string): Promise<void>;
+  fsReveal(path: string): Promise<void>;
 }
 
 const toBytes = (d: unknown): Uint8Array =>
@@ -313,6 +334,11 @@ export const tauriTransport: Transport = {
     // Dentro da pasta pessoal vira ~/… (o grupo continua valendo se o HOME mudar de nome).
     return hm && (r === hm || r.startsWith(hm + "/")) ? "~" + r.slice(hm.length) : r;
   },
+  fsList: (path) => invoke("fs_list", { path }),
+  fsRead: (path) => invoke("fs_read", { path }),
+  fsWrite: (path, text, mtime) => invoke("fs_write", { path, text, mtime }),
+  fsOpen: (path) => invoke("fs_open", { path }),
+  fsReveal: (path) => invoke("fs_reveal", { path }),
 };
 
 // ---------- Navegador (celular): WebSocket com o core ----------
@@ -513,6 +539,11 @@ function createWsTransport(): Transport {
     setupProjects: () => Promise.resolve([]),
     voiceSet: () => Promise.reject("disponível só no desktop"),
     pickFolder: () => Promise.resolve(null),
+    fsList: () => Promise.reject("disponível só no desktop"),
+    fsRead: () => Promise.reject("disponível só no desktop"),
+    fsWrite: () => Promise.reject("disponível só no desktop"),
+    fsOpen: () => Promise.reject("disponível só no desktop"),
+    fsReveal: () => Promise.reject("disponível só no desktop"),
   };
 }
 
